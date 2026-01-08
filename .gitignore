@@ -1,5 +1,6 @@
 node_modules
-output
+output/*
+!output/.gitkeep
 dist
 .env*
 !.env.example
