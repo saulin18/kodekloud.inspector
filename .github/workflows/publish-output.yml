@@ -43,6 +43,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: md-output
+          publish_branch: output/markdown
           publish_dir: ./output
           commit_message: 'chore: update output - ${{ env.CURRENT_DATE }}'
