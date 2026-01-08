@@ -1,0 +1,45 @@
+name: Publish output
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  publish-md-output:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.7.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+          pnpm exec playwright install
+          cp .env.example .env
+
+      - name: Generate output
+        run: pnpm scrape
+
+      - name: Publish output folder
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: md-output
+          publish_dir: ./output
+          commit_message: "chore: update output - $(date +'%Y-%m-%d %H:%M:%S')"
