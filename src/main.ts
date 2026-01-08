@@ -7,46 +7,52 @@ import { config } from './config';
 import { buildAllLinksMarkdown } from './app/links';
 import { buildPageContentMarkdown } from './app/content';
 import { closeBrowser } from './core/browser';
+import { mkdirSync } from 'node:fs';
+import urlJoin from 'url-join';
+import { NavigationItem } from './types';
 
 const main = async () => {
   try {
-    // Get target URL from environment or use default
-    const targetUrl = process.env.TARGET_URL || config.baseUrl;
+    const links = await crawlLinks(
+      config.baseUrl,
+      // get only docs links
+      ({ href }) => href.startsWith('/docs'),
+    );
+    await writeFile(
+      path.join(config.outputDir, 'All_links.md'),
+      await buildAllLinksMarkdown('All links in ' + config.baseUrl, links),
+    );
 
-    // If TARGET_URL is set and is a full URL, scrape that specific page
-    if (process.env.TARGET_URL && targetUrl.startsWith('http')) {
-      console.log(`Scraping content from: ${targetUrl}`);
+    // navigate for each link
+    for (const link of links) {
+      // create directory based on url
+      const fullHref = urlJoin(config.baseUrl, link.href);
+      const pageContent = await scrapePageContent(fullHref, true);
 
-      const pageContent = await scrapePageContent(targetUrl, config.includeNavigation);
+      // navigate for each navigation link
+      const recursiveNavigation = async (items: NavigationItem[]) => {
+        for (const item of items) {
+          if (item.href) {
+            const pageContent = await scrapePageContent(urlJoin(config.baseUrl, item.href), false);
+            const markdown = await buildPageContentMarkdown(pageContent);
+            await writeFile(
+              path.join(config.outputDir, item.href, '..', item.href!.split('/').pop()! + '.md'),
+              markdown,
+            );
+          } else if (item.children) {
+            const reference = item.children[0].href!;
+            mkdirSync(
+              path.join(config.outputDir, reference, '../..', reference.split('/').pop()!),
+              {
+                recursive: true,
+              },
+            );
+            await recursiveNavigation(item.children);
+          }
+        }
+      };
 
-      // Create a safe filename from the URL
-      const urlPath = new URL(targetUrl).pathname.replace(/\//g, '_').replace(/^_/, '') || 'page';
-      const filename = `${urlPath}.md`;
-
-      const markdown = await buildPageContentMarkdown(pageContent);
-
-      await writeFile(path.join(config.outputDir, filename), markdown);
-
-      console.log(`Saved page content to ${path.join(config.outputDir, filename)}`);
-      console.log(`Title: ${pageContent.title}`);
-      console.log(`Headings found: ${pageContent.headings.length}`);
-      console.log(`Links found: ${pageContent.links.length}`);
-    } else {
-      // Original behavior: crawl links
-      console.log(`Crawling links from: ${targetUrl}`);
-
-      const links = await crawlLinks(
-        targetUrl,
-        // get only docs links
-        ({ href }) => href.startsWith('/docs'),
-      );
-
-      await writeFile(
-        path.join(config.outputDir, 'All_links.md'),
-        await buildAllLinksMarkdown('All links in ' + targetUrl, links),
-      );
-
-      console.log(`Saved ${links.length} links to ${path.join(config.outputDir, 'All_links.md')}`);
+      await recursiveNavigation(pageContent.navigation!);
     }
   } catch (error) {
     console.error('Crawler failed:', error);

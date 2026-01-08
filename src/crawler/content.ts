@@ -11,14 +11,11 @@ export const scrapePageContent = async (
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Wait for content to load
-    await page.waitForTimeout(2000);
-
     // Extract title
     const title = await page.title();
 
     // Find the article element
-    const articleElement = page.locator('article').first();
+    const articleElement = page.locator('header + div article > div').first();
     const articleExists = (await articleElement.count()) > 0;
 
     if (!articleExists) {
@@ -42,7 +39,7 @@ export const scrapePageContent = async (
     }
 
     // Extract content from article
-    const content = (await articleElement.textContent()) || '';
+    const htmlContent = (await articleElement.innerHTML()) || '';
 
     // Extract headings only from the article
     const headings: Array<{ level: number; text: string }> = [];
@@ -74,7 +71,7 @@ export const scrapePageContent = async (
     return {
       title: title.trim(),
       url,
-      content: content.trim(),
+      htmlContent: htmlContent.trim(),
       headings,
       links,
       ...(includeNavigation && navigation ? { navigation } : {}),
@@ -96,9 +93,12 @@ const extractNavItems = async (ulLocator: Locator): Promise<NavigationItem[]> =>
 
     const buttonCount = await button.count();
     const linkCount = await link.count();
-    const nestedUlCount = await nestedUl.count();
 
     if (buttonCount > 0) {
+      await button.click();
+      await button.page().waitForTimeout(1000);
+      const nestedUlCount = await nestedUl.count();
+
       const h3 = button.locator('h3').first();
       const h3Count = await h3.count();
       let text = '';
@@ -116,6 +116,7 @@ const extractNavItems = async (ulLocator: Locator): Promise<NavigationItem[]> =>
 
       items.push(navItem);
     } else if (linkCount > 0) {
+      const nestedUlCount = await nestedUl.count();
       const href = await link.getAttribute('href');
       const text = (await link.textContent())?.trim() || '';
 

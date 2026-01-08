@@ -15,7 +15,7 @@ Example:
 </article>
 ```
 
-![Article structure example](../src/screenshots/course-article-example.png)
+![Article structure example](./screenshots/course-article-example.png)
 
 And this is why we have:
 
@@ -102,7 +102,7 @@ The HTML structure we see is the following:
 </nav>
 ```
 
-![Navigation sidebar structure example](../src/screenshots/classes-sidebar-ul-example.png)
+![Navigation sidebar structure example](./screenshots/classes-sidebar-ul-example.png)
 
 ```typescript
 const extractNavItems = async (ulLocator: Locator): Promise<NavigationItem[]> => {

@@ -12,7 +12,7 @@ export interface NavigationItem {
 export interface PageContent {
   title: string;
   url: string;
-  content: string;
+  htmlContent: string;
   headings: Array<{ level: number; text: string }>;
   links: Array<{ href: string; text: string }>;
   navigation?: NavigationItem[];
