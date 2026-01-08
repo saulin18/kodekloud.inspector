@@ -1,7 +1,7 @@
 import { createPage } from '../core/browser';
 import { LinkInfo } from '../types';
 
-export const crawlLinks = async (url: string) => {
+export const crawlLinks = async (url: string, filterCallback = (_: LinkInfo) => true) => {
   const page = await createPage();
 
   try {
@@ -11,10 +11,13 @@ export const crawlLinks = async (url: string) => {
     const links: LinkInfo[] = [];
 
     for (const link of linksLocator) {
-      links.push({
+      const data = {
         href: (await link.getAttribute('href'))?.trim() || '',
         text: (await link.textContent())?.trim() || '',
-      });
+      };
+      if (filterCallback(data)) {
+        links.push(data);
+      }
     }
 
     return links;

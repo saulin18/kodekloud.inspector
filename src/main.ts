@@ -7,7 +7,12 @@ import { buildAllLinksMarkdown } from './app/links';
 
 const main = async () => {
   try {
-    const links = await crawlLinks(config.baseUrl);
+    const links = await crawlLinks(
+      config.baseUrl,
+
+      // get only docs links
+      ({ href }) => href.startsWith('/docs'),
+    );
 
     await writeFile(
       path.join(config.outputDir, 'All_links.md'),
