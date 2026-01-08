@@ -41,12 +41,9 @@ const main = async () => {
             );
           } else if (item.children) {
             const reference = item.children[0].href!;
-            mkdirSync(
-              path.join(config.outputDir, reference, '../..', reference.split('/').pop()!),
-              {
-                recursive: true,
-              },
-            );
+            mkdirSync(path.join(config.outputDir, reference, '..', reference.split('/').pop()!), {
+              recursive: true,
+            });
             await recursiveNavigation(item.children);
           }
         }
