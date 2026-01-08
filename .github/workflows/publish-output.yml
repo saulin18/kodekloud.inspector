@@ -36,10 +36,13 @@ jobs:
       - name: Generate output
         run: pnpm scrape
 
+      - name: Set current date
+        run: echo "CURRENT_DATE=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+
       - name: Publish output folder
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: md-output
           publish_dir: ./output
-          commit_message: "chore: update output - $(date +'%Y-%m-%d %H:%M:%S')"
+          commit_message: 'chore: update output - ${{ env.CURRENT_DATE }}'
