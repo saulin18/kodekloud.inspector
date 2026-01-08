@@ -20,18 +20,49 @@ pnpm exec playwright install
 
 ### 2. Configure Environment
 
-Create `.env` file or clone from `.env.example`
+Create `.env` file in the root directory:
 
 ```env
 BASE_URL=https://notes.kodekloud.com
 HEADLESS=true
+EXECUTABLE_PATH=
 ```
+
+**To scrape a specific page**, add `TARGET_URL` to your `.env`:
+
+```env
+BASE_URL=https://notes.kodekloud.com
+HEADLESS=true
+EXECUTABLE_PATH=
+TARGET_URL=https://notes.kodekloud.com/docs/AWS-Solutions-Architect-Associate-Certification/Introduction/Course-Overview
+```
+
+**To include navigation in the output** (useful for extracting the sidebar navigation structure), add `INCLUDE_NAVIGATION=true`:
+
+```env
+BASE_URL=https://notes.kodekloud.com
+HEADLESS=true
+EXECUTABLE_PATH=
+TARGET_URL=https://notes.kodekloud.com/docs/AWS-Solutions-Architect-Associate-Certification/Introduction/Course-Overview
+INCLUDE_NAVIGATION=true
+```
+
+> **Note**: The navigation is extracted once and included in the markdown output. This is useful because the navigation structure is the same across different articles.
 
 ### 3. Run the Scraper
 
+**Scrape a specific page:**
+```bash
+# Set TARGET_URL in .env, then:
+pnpm scrape
+```
+
+**Or scrape all links (default behavior when TARGET_URL is not set):**
 ```bash
 pnpm scrape
 ```
+
+The output will be saved in the `output/` directory.
 
 > [!warning]
 > This project is for **educational purposes only**. It demonstrates:
