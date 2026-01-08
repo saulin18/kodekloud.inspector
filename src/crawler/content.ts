@@ -15,7 +15,7 @@ export const scrapePageContent = async (
     const title = await page.title();
 
     // Find the article element
-    const articleElement = page.locator('header + div article > div').first();
+    const articleElement = page.locator('article').first();
     const articleExists = (await articleElement.count()) > 0;
 
     if (!articleExists) {
