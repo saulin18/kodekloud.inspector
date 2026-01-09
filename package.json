@@ -17,6 +17,7 @@
     "prettier": "^3.7.4"
   },
   "dependencies": {
+    "@truto/turndown-plugin-gfm": "^1.0.2",
     "@types/turndown": "^5.0.6",
     "dotenv": "^17.2.3",
     "marked": "^17.0.1",

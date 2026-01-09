@@ -10,10 +10,8 @@ export const crawlPageContentNavigation = async (url: string): Promise<Navigatio
   const navListCount = await navListLocator.count();
 
   if (navListCount > 0) {
-    console.log('Navigation list found');
     return extractNavItems(navListLocator);
   } else {
-    console.log('No navigation list found');
     return [];
   }
 };

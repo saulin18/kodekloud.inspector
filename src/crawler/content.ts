@@ -34,8 +34,8 @@ export const scrapePageContent = async (url: string): Promise<PageContent> => {
         }
       }
     }
-    console.log('Headings found in article:', headings.length);
-    console.log('Headings:', headings.map((h) => `h${h.level}: ${h.text}`).join('\n'));
+    //console.log('Headings found in article:', headings.length);
+    //console.log('Headings:', headings.map((h) => `h${h.level}: ${h.text}`).join('\n'));
 
     // Extract links only from the article
     const links: Array<{ href: string; text: string }> = [];
@@ -48,8 +48,8 @@ export const scrapePageContent = async (url: string): Promise<PageContent> => {
         links.push({ href: href.trim(), text: text.trim() });
       }
     }
-    console.log('Links found in article:', links.length);
-    console.log('Links:', links.map((l) => `${l.text} -> ${l.href}`).join('\n'));
+    //console.log('Links found in article:', links.length);
+    //console.log('Links:', links.map((l) => `${l.text} -> ${l.href}`).join('\n'));
 
     return {
       title: title.trim(),
@@ -66,7 +66,7 @@ export const scrapePageContent = async (url: string): Promise<PageContent> => {
 export const extractNavItems = async (ulLocator: Locator): Promise<NavigationItem[]> => {
   const items: NavigationItem[] = [];
   const listItems = await ulLocator.locator('> li').all();
-  console.log('List items:', listItems.length);
+  //console.log('List items:', listItems.length);
 
   for (const li of listItems) {
     const button = li.locator('button').first();
