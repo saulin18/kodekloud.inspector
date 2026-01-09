@@ -15,5 +15,4 @@ export interface PageContent {
   htmlContent: string;
   headings: Array<{ level: number; text: string }>;
   links: Array<{ href: string; text: string }>;
-  navigation?: NavigationItem[];
 }

@@ -1,11 +1,9 @@
 import { createPage } from '../core/browser';
 import { PageContent, NavigationItem } from '../types';
 import type { Locator } from 'playwright';
+import { CrawlerError } from '../types/error';
 
-export const scrapePageContent = async (
-  url: string,
-  includeNavigation = false,
-): Promise<PageContent> => {
+export const scrapePageContent = async (url: string): Promise<PageContent> => {
   const page = await createPage();
 
   try {
@@ -19,23 +17,7 @@ export const scrapePageContent = async (
     const articleExists = (await articleElement.count()) > 0;
 
     if (!articleExists) {
-      throw new Error('No article element found on the page');
-    }
-
-    // Extract navigation (if requested)
-    let navigation: NavigationItem[] | undefined;
-    if (includeNavigation) {
-      const navListLocator = page.locator('ul[role="list"]').first();
-      const navListCount = await navListLocator.count();
-
-      if (navListCount > 0) {
-        console.log('Navigation list found');
-
-        // Extract navigation items recursively
-        navigation = await extractNavItems(navListLocator);
-      } else {
-        console.log('No navigation list found');
-      }
+      throw new CrawlerError('Article not found');
     }
 
     // Extract content from article
@@ -57,6 +39,7 @@ export const scrapePageContent = async (
 
     // Extract links only from the article
     const links: Array<{ href: string; text: string }> = [];
+
     const linkElements = await articleElement.locator('a').all();
     for (const link of linkElements) {
       const href = await link.getAttribute('href');
@@ -74,14 +57,13 @@ export const scrapePageContent = async (
       htmlContent: htmlContent.trim(),
       headings,
       links,
-      ...(includeNavigation && navigation ? { navigation } : {}),
     };
   } finally {
     await page.close();
   }
 };
 
-const extractNavItems = async (ulLocator: Locator): Promise<NavigationItem[]> => {
+export const extractNavItems = async (ulLocator: Locator): Promise<NavigationItem[]> => {
   const items: NavigationItem[] = [];
   const listItems = await ulLocator.locator('> li').all();
   console.log('List items:', listItems.length);
