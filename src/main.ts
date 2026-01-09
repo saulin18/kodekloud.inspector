@@ -20,20 +20,29 @@ const main = async () => {
       await buildAllLinksMarkdown('All links in ' + config.baseUrl, links),
     );
 
-    // Split links into 3 batches
-    const batchSize = Math.ceil(links.length / 3);
+    // Apply max courses limit if set
+    const maxCourses =
+      config.maxCourses > 0 ? Math.min(config.maxCourses, links.length) : links.length;
+    const limitedLinks = links.slice(0, maxCourses);
+
+    console.log(`Processing ${maxCourses} of ${links.length} available courses`);
+
+    // Split links into batches based on config
+    const batchSize = Math.ceil(limitedLinks.length / config.parallelBatches);
+    const batches = Array.from({ length: config.parallelBatches }, (_, i) =>
+      limitedLinks.slice(i * batchSize, (i + 1) * batchSize),
+    );
 
     // Process each batch in parallel
+    let completed = 0;
     await Promise.all(
-      [
-        links.slice(0, batchSize),
-        links.slice(batchSize, batchSize * 2),
-        links.slice(batchSize * 2),
-      ].map(async (batch: LinkInfo[], index: number) => {
+      batches.map(async (batch: LinkInfo[], index: number) => {
         for (const link of batch) {
           console.debug(`- Batch [${index + 1}]: Start course ${link.href}`);
           await writeCourse(link);
           console.debug(`- Batch [${index + 1}]: Completed ${link.href}`);
+          completed++;
+          console.debug(`- Completed ${completed}/${maxCourses} courses`);
         }
       }),
     );
