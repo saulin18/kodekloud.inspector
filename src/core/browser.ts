@@ -1,8 +1,7 @@
-import { chromium, Browser, BrowserContext, Page, Response } from 'playwright';
+import { chromium, Browser, Page, Response } from 'playwright';
 import { config } from '../config';
 
 let browserInstance: Browser | null = null;
-let contextInstance: BrowserContext | null = null;
 const navigationCache = new Map<string, Promise<Response | null>>();
 
 export const getBrowser = async () => {
@@ -16,18 +15,14 @@ export const getBrowser = async () => {
   return browserInstance;
 };
 
-export const getContext = async () => {
-  if (!contextInstance) {
-    const browser = await getBrowser();
-    contextInstance = await browser.newContext();
-  }
-
-  return contextInstance;
-};
-
 export const createPage = async () => {
-  const context = await getContext();
-  return await context.newPage();
+  const browser = await getBrowser();
+  const context = await browser.newContext();
+
+  const page = await context.newPage();
+  page.on('close', () => context.close());
+
+  return page;
 };
 
 export const safeNavigate = async (
@@ -91,13 +86,6 @@ export const safeNavigate = async (
 export function clearNavigationCache() {
   navigationCache.clear();
 }
-
-export const closeContext = async () => {
-  if (contextInstance) {
-    await contextInstance.close();
-    contextInstance = null;
-  }
-};
 
 export const closeBrowser = async () => {
   if (browserInstance) {
