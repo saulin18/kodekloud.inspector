@@ -7,7 +7,7 @@ import { writeFile } from 'fs/promises';
 import path from 'path';
 import { mkdirSync } from 'fs';
 import { crawlPageContentNavigation } from '../crawler/page-navigation';
-import { CrawlerError } from '../types/error';
+import { CrawlerError } from '../utils/error';
 
 /**
  * Create directory based on url and scrap a course

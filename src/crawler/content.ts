@@ -1,64 +1,68 @@
 import { createPage } from '../core/browser';
 import { PageContent, NavigationItem } from '../types';
 import type { Locator } from 'playwright';
-import { CrawlerError } from '../types/error';
+import { CrawlerError } from '../utils/error';
+import { retryAndRetry } from '../utils/error';
 
 export const scrapePageContent = async (url: string): Promise<PageContent> => {
   const page = await createPage();
 
   try {
-    await page.goto(url);
-    await page.waitForTimeout(500);
+    return await retryAndRetry(async () => {
+      await page.goto(url);
 
-    // Extract title
-    const title = await page.title();
+      // Extract title
+      const title = await page.title();
 
-    // Find the article element
-    const articleElement = page.locator('article').first();
-    const articleExists = (await articleElement.count()) > 0;
+      return await retryAndRetry(async () => {
+        // Find the article element
+        const articleElement = page.locator('article').first();
+        const articleExists = (await articleElement.count()) > 0;
 
-    if (!articleExists) {
-      throw new CrawlerError('Article not found');
-    }
-
-    // Extract content from article
-    const htmlContent = (await articleElement.innerHTML()) || '';
-
-    // Extract headings only from the article
-    const headings: Array<{ level: number; text: string }> = [];
-    for (let level = 1; level <= 6; level++) {
-      const headingElements = await articleElement.locator(`h${level}`).all();
-      for (const heading of headingElements) {
-        const text = await heading.textContent();
-        if (text && text.trim()) {
-          headings.push({ level, text: text.trim() });
+        if (!articleExists) {
+          throw new CrawlerError('Article not found');
         }
-      }
-    }
-    //console.log('Headings found in article:', headings.length);
-    //console.log('Headings:', headings.map((h) => `h${h.level}: ${h.text}`).join('\n'));
 
-    // Extract links only from the article
-    const links: Array<{ href: string; text: string }> = [];
+        // Extract content from article
+        const htmlContent = (await articleElement.innerHTML()) || '';
 
-    const linkElements = await articleElement.locator('a').all();
-    for (const link of linkElements) {
-      const href = await link.getAttribute('href');
-      const text = await link.textContent();
-      if (href && text && text.trim()) {
-        links.push({ href: href.trim(), text: text.trim() });
-      }
-    }
-    //console.log('Links found in article:', links.length);
-    //console.log('Links:', links.map((l) => `${l.text} -> ${l.href}`).join('\n'));
+        // Extract headings only from the article
+        const headings: Array<{ level: number; text: string }> = [];
+        for (let level = 1; level <= 6; level++) {
+          const headingElements = await articleElement.locator(`h${level}`).all();
+          for (const heading of headingElements) {
+            const text = await heading.textContent();
+            if (text && text.trim()) {
+              headings.push({ level, text: text.trim() });
+            }
+          }
+        }
+        //console.log('Headings found in article:', headings.length);
+        //console.log('Headings:', headings.map((h) => `h${h.level}: ${h.text}`).join('\n'));
 
-    return {
-      title: title.trim(),
-      url,
-      htmlContent: htmlContent.trim(),
-      headings,
-      links,
-    };
+        // Extract links only from the article
+        const links: Array<{ href: string; text: string }> = [];
+
+        const linkElements = await articleElement.locator('a').all();
+        for (const link of linkElements) {
+          const href = await link.getAttribute('href');
+          const text = await link.textContent();
+          if (href && text && text.trim()) {
+            links.push({ href: href.trim(), text: text.trim() });
+          }
+        }
+        //console.log('Links found in article:', links.length);
+        //console.log('Links:', links.map((l) => `${l.text} -> ${l.href}`).join('\n'));
+
+        return {
+          title: title.trim(),
+          url,
+          htmlContent: htmlContent.trim(),
+          headings,
+          links,
+        };
+      });
+    });
   } finally {
     await page.close();
   }
