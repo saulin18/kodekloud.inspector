@@ -8,6 +8,7 @@ export const scrapePageContent = async (url: string): Promise<PageContent> => {
 
   try {
     await page.goto(url);
+    await page.waitForTimeout(500);
 
     // Extract title
     const title = await page.title();
