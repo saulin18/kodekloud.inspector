@@ -1,4 +1,4 @@
-import { createPage } from '../core/browser';
+import { createPage, safeNavigate } from '../core/browser';
 import { PageContent, NavigationItem } from '../types';
 import type { Locator } from 'playwright';
 import { CrawlerError } from '../utils/error';
@@ -9,7 +9,7 @@ export const scrapePageContent = async (url: string): Promise<PageContent> => {
 
   try {
     return await retryAndRetry(async () => {
-      await page.goto(url);
+      await safeNavigate(page, url);
 
       // Extract title
       const title = await page.title();

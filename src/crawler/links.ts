@@ -1,11 +1,11 @@
-import { createPage } from '../core/browser';
+import { createPage, safeNavigate } from '../core/browser';
 import { LinkInfo } from '../types';
 
 export const crawlLinks = async (url: string, filterCallback = (_: LinkInfo) => true) => {
   const page = await createPage();
 
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await safeNavigate(page, url);
 
     const linksLocator = await page.locator('a').all();
     const links: LinkInfo[] = [];
