@@ -89,6 +89,7 @@ export function clearNavigationCache() {
 
 export const closeBrowser = async () => {
   if (browserInstance) {
+    clearNavigationCache();
     await browserInstance.close();
     browserInstance = null;
   }

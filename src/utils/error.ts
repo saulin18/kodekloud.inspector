@@ -1,3 +1,6 @@
+/**
+ *
+ */
 export const retryAndRetry = async <T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
@@ -12,4 +15,8 @@ export const retryAndRetry = async <T>(
   }
   throw lastError!;
 };
+
+/**
+ *
+ */
 export class CrawlerError extends Error {}

@@ -5,8 +5,9 @@ import { crawlLinks } from './crawler/links';
 import { config } from './config';
 import { buildAllLinksMarkdown } from './app/links';
 import { closeBrowser } from './core/browser';
-import { writeCourse } from './app/course';
+import { getErrorsRegistryOfCourses, writeCourse } from './app/course';
 import { LinkInfo } from './types';
+import { splitBatches } from './utils/batch';
 
 const main = async () => {
   try {
@@ -27,16 +28,10 @@ const main = async () => {
 
     console.log(`Processing ${maxCourses} of ${links.length} available courses`);
 
-    // Split links into batches based on config
-    const batchSize = Math.ceil(limitedLinks.length / config.parallelBatches);
-    const batches = Array.from({ length: config.parallelBatches }, (_, i) =>
-      limitedLinks.slice(i * batchSize, (i + 1) * batchSize),
-    );
-
     // Process each batch in parallel
     let completed = 0;
     await Promise.all(
-      batches.map(async (batch: LinkInfo[], index: number) => {
+      splitBatches(limitedLinks).map(async (batch: LinkInfo[], index: number) => {
         for (const link of batch) {
           console.debug(`- Batch [${index + 1}]: Start course ${link.href}`);
           await writeCourse(link);
@@ -46,11 +41,18 @@ const main = async () => {
         }
       }),
     );
+
+    // report accumulated errors
+    console.log('Errors: ', getErrorsRegistryOfCourses().length);
+    getErrorsRegistryOfCourses().forEach((e, i) => console.warn('Error ' + ++i, e));
   } catch (error) {
     console.error('Crawler failed:', error);
-    process.exit(1);
+    //process.exit(1);
   } finally {
-    await closeBrowser();
+    //try {
+    //  await closeBrowser();
+    //} catch {}
+    process.exit(0);
   }
 };
 

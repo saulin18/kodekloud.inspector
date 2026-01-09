@@ -7,7 +7,11 @@ import { writeFile } from 'fs/promises';
 import path from 'path';
 import { mkdirSync } from 'fs';
 import { crawlPageContentNavigation } from '../crawler/page-navigation';
-import { CrawlerError } from '../utils/error';
+import { retryAndRetry } from '../utils/error';
+
+const errors: Error[] = [];
+
+export const getErrorsRegistryOfCourses = () => errors;
 
 /**
  * Create directory based on url and scrap a course
@@ -15,53 +19,64 @@ import { CrawlerError } from '../utils/error';
  */
 export const writeCourse = async (link: NavigationItem) => {
   const fullHref = urlJoin(config.baseUrl, link.href!);
-  const navigation = await crawlPageContentNavigation(fullHref);
 
-  // navigate for each navigation link
-  const recursiveNavigation = async (
-    items: NavigationItem[],
-    parentPath = path.join(config.outputDir, 'docs'),
-  ) => {
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const currentIndex = (i + 1).toString().padStart(2, '0');
-      try {
-        if (item.href) {
-          // is a page
-          const pageContent = await scrapePageContent(urlJoin(config.baseUrl, item.href));
-          const markdown = await buildPageContentMarkdown(pageContent);
+  try {
+    const navigation = await retryAndRetry(async () => await crawlPageContentNavigation(fullHref));
 
-          const baseFileName = item.href.split('/').pop()!;
-          const enumeratedFileName = `${currentIndex}_${baseFileName}.md`;
+    // navigate for each navigation link
+    const recursiveNavigation = async (
+      items: NavigationItem[],
+      parentPath = path.join(config.outputDir, 'docs'),
+    ) => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const currentIndex = (i + 1).toString().padStart(2, '0');
+        try {
+          if (item.href) {
+            // is a page
+            const pageContent = await scrapePageContent(urlJoin(config.baseUrl, item.href));
+            const markdown = await buildPageContentMarkdown(pageContent);
 
-          await writeFile(path.join(parentPath, enumeratedFileName), markdown);
-        } else if (item.children) {
-          // is a folder
-          const reference = item.children[0].href!;
-          const baseFolderName = path.join(reference, '..').split('/').pop()!;
-          const enumeratedFolderName = `${currentIndex}_${baseFolderName}`;
-          const folderPath = path.join(parentPath, enumeratedFolderName);
+            const baseFileName = item.href.split('/').pop()!;
+            const enumeratedFileName = `${currentIndex}_${baseFileName}.md`;
 
-          mkdirSync(folderPath, {
-            recursive: true,
-          });
+            await writeFile(path.join(parentPath, enumeratedFileName), markdown);
+          } else if (item.children) {
+            // is a folder
+            const reference = item.children[0].href!;
+            const baseFolderName = path.join(reference, '..').split('/').pop()!;
+            const enumeratedFolderName = `${currentIndex}_${baseFolderName}`;
+            const folderPath = path.join(parentPath, enumeratedFolderName);
 
-          await recursiveNavigation(item.children, folderPath);
+            mkdirSync(folderPath, {
+              recursive: true,
+            });
+
+            await recursiveNavigation(item.children, folderPath);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorWithUrl = new Error(
+            `Failed to process ${item.href || 'unknown'}: ${errorMessage}`,
+          );
+
+          if (item.href) {
+            errors.push(errorWithUrl);
+          } else {
+            errors.push(error as Error);
+          }
+
+          console.warn(errorWithUrl);
         }
-      } catch (error) {
-        if (error instanceof CrawlerError) {
-          // continue the scraping
-          error.message = `Failed to scrape ${item.href}: ${error.message}`;
-          console.error(error);
-          continue;
-        }
-        throw error;
       }
-    }
-  };
+    };
 
-  await recursiveNavigation(
-    navigation!,
-    path.join(config.outputDir, link.href!.split('/').slice(0, 3).join('/')),
-  );
+    await recursiveNavigation(
+      navigation!,
+      path.join(config.outputDir, link.href!.split('/').slice(0, 3).join('/')),
+    );
+  } catch (error) {
+    errors.push(error as Error);
+    console.warn(error);
+  }
 };
