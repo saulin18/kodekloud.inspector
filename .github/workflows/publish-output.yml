@@ -34,6 +34,8 @@ jobs:
           echo "HEADLESS=true" >> .env
           echo "PARALLEL_BATCHES=7" >> .env
           echo "MAX_COURSES=0" >> .env
+          mkdir -p ./output/.github
+          cp ./.github/secret_scanning.yml ./output/.github
 
       - name: Generate output
         run: pnpm scrape
